@@ -56,7 +56,7 @@ def ask_gemini(prompt: str) -> dict | None:
     try:
         client = _get_client()
         response = client.models.generate_content(
-            model="gemini-2.0-flash",
+            model="gemini-3.6-flash",
             contents=prompt,
             config={"system_instruction": SYSTEM_INSTRUCTIONS},
         )
