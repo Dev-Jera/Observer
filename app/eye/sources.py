@@ -54,7 +54,12 @@ APPROVED_SOURCES = [
     },
     {
         "name": "Google News — X public posts",
-        "url": google_news_search("site:x.com Uganda civic OR parliament OR law"),
+        "url": google_news_search("site:x.com/Parliament_Ug OR site:x.com/PoliceUg OR site:x.com/StateHouseUg OR site:x.com/GCICUganda Uganda"),
+        "kind": "trending",
+    },
+    {
+        "name": "Google News — Ugandan breaking news",
+        "url": google_news_search("site:x.com/NewVisionWire OR site:x.com/DailyMonitor Uganda breaking news"),
         "kind": "trending",
     },
     {

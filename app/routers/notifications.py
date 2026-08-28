@@ -16,7 +16,7 @@ def list_notifications(language: str = Query("eng"), topics: str = Query(""), db
         .limit(50)
         .all()
     )
-    if language not in {"eng", "lug", "ach", "nyn", "lug_UG", "teo"}:
+    if language not in {"eng", "lug", "ach", "nyn", "lgg", "teo"}:
         language = "eng"
     selected_topics = {topic.strip().lower() for topic in topics.split(",") if topic.strip()}
     if selected_topics:
