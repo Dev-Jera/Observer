@@ -79,7 +79,8 @@ def deliver_due_sms(db: Session) -> int:
         notifications = [db.get(models.Notification, item.notification_id) for item in due]
         messages = [n.sms_text or n.message for n in notifications if n]
         message = " ".join(messages)[:160]
-        if send_sms([subscriber.phone_number], message):
+        sent, delivery_error = send_sms([subscriber.phone_number], message)
+        if sent:
             for item in due:
                 item.sent_at = now
                 item.error = ""
@@ -87,18 +88,18 @@ def deliver_due_sms(db: Session) -> int:
             sent_count += 1
         else:
             for item in due:
-                item.error = "SMS delivery failed or provider is not configured"
+                item.error = delivery_error
     db.commit()
     return sent_count
 
 
-def send_sms(phone_numbers: list[str], message: str) -> bool:
-    """Send one SMS batch; return False when disabled or rejected by the provider."""
+def send_sms(phone_numbers: list[str], message: str) -> tuple[bool, str]:
+    """Send one SMS batch and return a useful provider error when rejected."""
     if not phone_numbers:
-        return True
+        return True, ""
     if not settings.africastalking_username or not settings.africastalking_api_key:
         logger.info("Africa's Talking is not configured; SMS delivery skipped")
-        return False
+        return False, "Africa's Talking credentials are not configured"
 
     data = {
         "username": settings.africastalking_username,
@@ -115,7 +116,12 @@ def send_sms(phone_numbers: list[str], message: str) -> bool:
             timeout=20,
         )
         response.raise_for_status()
-        return True
-    except httpx.HTTPError:
-        logger.exception("Africa's Talking SMS request failed")
-        return False
+        return True, ""
+    except httpx.HTTPStatusError as exc:
+        provider_error = f"Africa's Talking HTTP {exc.response.status_code}: {exc.response.text[:500]}"
+        logger.error(provider_error)
+        return False, provider_error
+    except httpx.RequestError as exc:
+        provider_error = f"Africa's Talking request error: {exc}"
+        logger.error(provider_error)
+        return False, provider_error
