@@ -131,6 +131,15 @@ def seed():
             connection.execute(text("ALTER TABLE notifications ADD COLUMN sms_text TEXT DEFAULT ''"))
         if "image_url" not in columns:
             connection.execute(text("ALTER TABLE notifications ADD COLUMN image_url VARCHAR(1000) DEFAULT ''"))
+        notification_columns = {column["name"] for column in inspect(engine).get_columns("notifications")}
+        for name, definition in {
+            "source_name": "VARCHAR(300) DEFAULT ''",
+            "source_url": "VARCHAR(1000) DEFAULT ''",
+            "source_reference": "VARCHAR(500) DEFAULT ''",
+            "source_quote": "TEXT DEFAULT ''",
+        }.items():
+            if name not in notification_columns:
+                connection.execute(text(f"ALTER TABLE notifications ADD COLUMN {name} {definition}"))
         subscriber_columns = {column["name"] for column in inspect(engine).get_columns("sms_subscribers")}
         if "language" not in subscriber_columns:
             connection.execute(text("ALTER TABLE sms_subscribers ADD COLUMN language VARCHAR(20) DEFAULT 'eng'"))

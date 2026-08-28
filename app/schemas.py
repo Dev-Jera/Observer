@@ -63,6 +63,10 @@ class NotificationOut(BaseModel):
     title: str
     message: str
     image_url: str
+    source_name: str
+    source_url: str
+    source_reference: str
+    source_quote: str
     tag: str
     is_read: bool
     created_at: datetime

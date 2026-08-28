@@ -162,10 +162,14 @@ def run_scrape() -> dict:
                 db.add(article)
 
                 notification = models.Notification(
-                    title="Digital Eye alert",
-                    message=processed["dyk_text"] or processed["summary"],
+                    title=processed["title"],
+                    message=processed["summary"],
                     sms_text=(processed["sms_text"] or processed["summary"]) + f" Read: {item['url']}",
                     image_url=item["image_url"],
+                    source_name=source["name"],
+                    source_url=item["url"],
+                    source_reference=processed["source_reference"],
+                    source_quote=processed["source_quote"],
                     tag=processed["topic"].upper(),
                     is_read=False,
                 )

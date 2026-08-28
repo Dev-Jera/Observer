@@ -28,6 +28,8 @@ def _fallback(title: str, source_name: str) -> dict:
         "rights_impact": "",
         "dyk_text": f"Did you know? New civic update from {source_name}.",
         "sms_text": f"CivicPulse: New update from {source_name}: {title[:80]}",
+        "source_reference": "",
+        "source_quote": "",
     }
 
 
@@ -56,4 +58,6 @@ def process_content(title: str, url: str, source_name: str, content: str = "") -
         "rights_impact": result.get("rights_impact", ""),
         "dyk_text": result.get("dyk_text", ""),
         "sms_text": result.get("sms_text", ""),
+        "source_reference": result.get("source_reference", ""),
+        "source_quote": result.get("source_quote", ""),
     }

@@ -33,7 +33,9 @@ You will receive a title from a trusted source page. Respond with ONLY valid JSO
     "topic": "one of: parliament, privacy, labor, land, police, education, business, health, comparative, general",
   "rights_impact": "the related right or law reference if clearly connected, else empty string",
   "dyk_text": "one-sentence 'Did you know? ...' hook about this update",
-  "sms_text": "CivicPulse: one short SMS version under 160 characters"
+    "sms_text": "CivicPulse: one short SMS version under 160 characters",
+    "source_reference": "exact section, paragraph, page, or heading where the key fact appears; empty if unavailable",
+    "source_quote": "short exact quote supporting the explanation, or empty string if unavailable"
 }"""
 
 # Lazy import so the server works without google-genai installed / no key
