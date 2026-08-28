@@ -80,6 +80,7 @@ class SmsSubscriber(Base):
     id: Mapped[int] = mapped_column(primary_key=True)
     phone_number: Mapped[str] = mapped_column(String(20), unique=True, index=True)
     cadence_minutes: Mapped[int] = mapped_column(Integer, default=30)
+    language: Mapped[str] = mapped_column(String(20), default="eng")
     next_delivery_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
     is_active: Mapped[bool] = mapped_column(Boolean, default=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)

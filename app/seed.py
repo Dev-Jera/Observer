@@ -131,6 +131,9 @@ def seed():
             connection.execute(text("ALTER TABLE notifications ADD COLUMN sms_text TEXT DEFAULT ''"))
         if "image_url" not in columns:
             connection.execute(text("ALTER TABLE notifications ADD COLUMN image_url VARCHAR(1000) DEFAULT ''"))
+        subscriber_columns = {column["name"] for column in inspect(engine).get_columns("sms_subscribers")}
+        if "language" not in subscriber_columns:
+            connection.execute(text("ALTER TABLE sms_subscribers ADD COLUMN language VARCHAR(20) DEFAULT 'eng'"))
         columns = {column["name"] for column in inspect(engine).get_columns("articles")}
         article_columns = {
             "jurisdiction": "VARCHAR(100) DEFAULT 'Uganda'",

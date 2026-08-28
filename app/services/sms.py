@@ -11,6 +11,7 @@ from .. import models
 
 logger = logging.getLogger("citizeneye.sms")
 SMS_URL = "https://api.africastalking.com/version1/messaging"
+SUNBIRD_URL = "https://api.sunbird.ai/tasks/translate"
 UGANDA_PHONE = re.compile(r"^\+256\d{9}$")
 VALID_CADENCES = (1, 5, 30, 60, 360)
 
@@ -77,7 +78,7 @@ def deliver_due_sms(db: Session) -> int:
         if not due:
             continue
         notifications = [db.get(models.Notification, item.notification_id) for item in due]
-        messages = [n.sms_text or n.message for n in notifications if n]
+        messages = [translate_text(n.sms_text or n.message, subscriber.language) for n in notifications if n]
         message = " ".join(messages)[:160]
         sent, delivery_error = send_sms([subscriber.phone_number], message)
         if sent:
@@ -91,6 +92,23 @@ def deliver_due_sms(db: Session) -> int:
                 item.error = delivery_error
     db.commit()
     return sent_count
+
+
+def translate_text(text: str, target_language: str) -> str:
+    if not text or target_language == "eng" or not settings.sunbird_api_key:
+        return text
+    try:
+        response = httpx.post(
+            SUNBIRD_URL,
+            json={"source_language": "eng", "target_language": target_language, "text": text},
+            headers={"Authorization": f"Bearer {settings.sunbird_api_key}"},
+            timeout=20,
+        )
+        response.raise_for_status()
+        return response.json().get("output", {}).get("translated_text") or text
+    except (httpx.HTTPError, ValueError, TypeError):
+        logger.exception("Sunbird translation failed for %s", target_language)
+        return text
 
 
 def send_sms(phone_numbers: list[str], message: str) -> tuple[bool, str]:

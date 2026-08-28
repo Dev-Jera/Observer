@@ -74,11 +74,13 @@ class NotificationOut(BaseModel):
 class SmsSubscriptionIn(BaseModel):
     phone_number: str
     cadence_minutes: int = 30
+    language: str = "eng"
 
 
 class SmsSubscriptionOut(BaseModel):
     phone_number: str
     cadence_minutes: int
+    language: str
     is_active: bool
 
     class Config:

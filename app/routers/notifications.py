@@ -1,21 +1,35 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
 
 from ..database import get_db
 from .. import models, schemas
-from ..services.sms import VALID_CADENCES, normalize_phone, queue_notification_for_subscriber
+from ..services.sms import VALID_CADENCES, normalize_phone, queue_notification_for_subscriber, translate_text
 
 router = APIRouter(prefix="/api/notifications", tags=["notifications"])
 
 
 @router.get("", response_model=list[schemas.NotificationOut])
-def list_notifications(db: Session = Depends(get_db)):
-    return (
+def list_notifications(language: str = Query("eng"), db: Session = Depends(get_db)):
+    notifications = (
         db.query(models.Notification)
         .order_by(models.Notification.created_at.desc())
         .limit(50)
         .all()
     )
+    if language not in {"eng", "lug", "ach", "nyn", "lug_UG", "teo"}:
+        language = "eng"
+    return [
+        {
+            "id": item.id,
+            "title": translate_text(item.title, language),
+            "message": translate_text(item.message, language),
+            "image_url": item.image_url,
+            "tag": item.tag,
+            "is_read": item.is_read,
+            "created_at": item.created_at,
+        }
+        for item in notifications
+    ]
 
 
 @router.post("/read-all")
@@ -28,20 +42,23 @@ def mark_all_read(db: Session = Depends(get_db)):
 @router.post("/subscribe", response_model=schemas.SmsSubscriptionOut)
 def subscribe_to_sms(payload: schemas.SmsSubscriptionIn, db: Session = Depends(get_db)):
     if payload.cadence_minutes not in VALID_CADENCES:
-        raise HTTPException(status_code=422, detail="Choose 30, 60, or 360 minutes")
+        raise HTTPException(status_code=422, detail="Choose 1, 5, 30, 60, or 360 minutes")
     try:
         phone_number = normalize_phone(payload.phone_number)
     except ValueError as exc:
         raise HTTPException(status_code=422, detail=str(exc)) from exc
 
     subscriber = db.query(models.SmsSubscriber).filter_by(phone_number=phone_number).first()
+    language = payload.language if payload.language in {"eng", "lug", "ach", "nyn", "lug_UG", "teo"} else "eng"
     if subscriber:
         subscriber.is_active = True
         subscriber.cadence_minutes = payload.cadence_minutes
+        subscriber.language = language
     else:
         subscriber = models.SmsSubscriber(
             phone_number=phone_number,
             cadence_minutes=payload.cadence_minutes,
+            language=language,
             is_active=True,
         )
         db.add(subscriber)
