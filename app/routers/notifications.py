@@ -3,7 +3,7 @@ from sqlalchemy.orm import Session
 
 from ..database import get_db
 from .. import models, schemas
-from ..services.sms import VALID_CADENCES, normalize_phone
+from ..services.sms import VALID_CADENCES, normalize_phone, queue_notification_for_subscriber
 
 router = APIRouter(prefix="/api/notifications", tags=["notifications"])
 
@@ -45,6 +45,20 @@ def subscribe_to_sms(payload: schemas.SmsSubscriptionIn, db: Session = Depends(g
             is_active=True,
         )
         db.add(subscriber)
+    db.flush()
+    latest_unread = (
+        db.query(models.Notification)
+        .filter_by(is_read=False)
+        .order_by(models.Notification.created_at.desc())
+        .first()
+    )
+    if latest_unread:
+        already_queued = db.query(models.SmsDelivery).filter_by(
+            subscriber_id=subscriber.id,
+            notification_id=latest_unread.id,
+        ).first()
+        if not already_queued:
+            queue_notification_for_subscriber(db, latest_unread, subscriber)
     db.commit()
     db.refresh(subscriber)
     return subscriber

@@ -42,6 +42,21 @@ def queue_notification(db: Session, notification: models.Notification) -> None:
         ))
 
 
+def queue_notification_for_subscriber(
+    db: Session, notification: models.Notification, subscriber: models.SmsSubscriber
+) -> None:
+    """Queue one notification for a newly subscribed recipient."""
+    now = datetime.now(timezone.utc)
+    scheduled_for = subscriber.next_delivery_at or now
+    if scheduled_for.tzinfo is None:
+        scheduled_for = scheduled_for.replace(tzinfo=timezone.utc)
+    db.add(models.SmsDelivery(
+        subscriber_id=subscriber.id,
+        notification_id=notification.id,
+        scheduled_for=max(now, scheduled_for),
+    ))
+
+
 def deliver_due_sms(db: Session) -> int:
     """Send queued notifications that have reached each subscriber's cadence."""
     now = datetime.now(timezone.utc)
