@@ -9,7 +9,7 @@ class Settings(BaseSettings):
     africastalking_api_key: str = ""
     africastalking_sender_id: str = ""
     allowed_origins: str = "http://localhost:8081,http://localhost:19006"
-    scrape_interval_minutes: int = 30
+    scrape_interval_minutes: int = 20
     sms_delivery_interval_minutes: int = 5
 
     class Config:

@@ -1,4 +1,11 @@
-"""The approved source list — the Digital Eye only watches these."""
+"""Approved public sources and Google News discovery searches."""
+from urllib.parse import quote
+
+
+def google_news_search(query: str) -> str:
+    return f"https://news.google.com/rss/search?q={quote(query)}&hl=en-UG&gl=UG&ceid=UG:en"
+
+
 APPROVED_SOURCES = [
     {
         "name": "Parliament of Uganda — Bills",
@@ -39,5 +46,25 @@ APPROVED_SOURCES = [
         "name": "UK Legislation",
         "url": "https://www.legislation.gov.uk/",
         "kind": "comparative",
+    },
+    {
+        "name": "Google News — Uganda trends",
+        "url": google_news_search("Uganda trending civic news OR public policy"),
+        "kind": "trending",
+    },
+    {
+        "name": "Google News — X public posts",
+        "url": google_news_search("site:x.com Uganda civic OR parliament OR law"),
+        "kind": "trending",
+    },
+    {
+        "name": "Google News — Uganda laws",
+        "url": google_news_search("Uganda Constitution law court legal rights"),
+        "kind": "law",
+    },
+    {
+        "name": "Google News — global legal comparisons",
+        "url": google_news_search("law rights comparison Uganda Kenya South Africa UK"),
+        "kind": "comparison",
     },
 ]

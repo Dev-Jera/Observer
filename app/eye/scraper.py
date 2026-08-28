@@ -63,10 +63,15 @@ def fetch_page(url: str) -> str | None:
 
 def extract_content(html: str, limit: int = 12000) -> str:
     """Return readable page text for the AI pipeline."""
-    soup = BeautifulSoup(html, "html.parser")
+    soup = BeautifulSoup(html, "xml" if "<rss" in html[:500].lower() or "<feed" in html[:500].lower() else "html.parser")
     for element in soup(["script", "style", "nav", "footer", "header"]):
         element.decompose()
-    return " ".join(soup.get_text(" ", strip=True).split())[:limit]
+    blocks = []
+    for element in soup.find_all(["h1", "h2", "h3", "h4", "p", "li"]):
+        text = " ".join(element.get_text(" ", strip=True).split())
+        if text and text not in blocks:
+            blocks.append(text)
+    return "\n\n".join(blocks)[:limit] or " ".join(soup.get_text(" ", strip=True).split())[:limit]
 
 
 def extract_image_url(html: str, base_url: str) -> str:
@@ -79,9 +84,20 @@ def extract_image_url(html: str, base_url: str) -> str:
 
 def extract_items(html: str, base_url: str, limit: int = 10) -> list[dict]:
     """Extract candidate content items (links with titles) from an HTML page."""
-    soup = BeautifulSoup(html, "html.parser")
+    soup = BeautifulSoup(html, "xml" if "<rss" in html[:500].lower() or "<feed" in html[:500].lower() else "html.parser")
     items = []
     seen_urls = set()
+    rss_items = soup.find_all("item")
+    if rss_items:
+        for rss_item in rss_items[:limit]:
+            title = rss_item.find("title")
+            link = rss_item.find("link")
+            description = rss_item.find("description")
+            title_text = title.get_text(" ", strip=True) if title else ""
+            href = link.get_text(strip=True) if link else ""
+            if title_text and href.startswith("http"):
+                items.append({"url": href, "title": title_text, "content": description.get_text(" ", strip=True) if description else ""})
+        return items
     for a in soup.find_all("a", href=True):
         title = a.get_text(strip=True)
         href = a["href"].strip()
@@ -125,7 +141,7 @@ def run_scrape() -> dict:
                     continue
 
                 item_html = fetch_page(item["url"])
-                item["content"] = extract_content(item_html) if item_html else ""
+                item["content"] = extract_content(item_html) if item_html else item.get("content", "")
                 item["image_url"] = extract_image_url(item_html, item["url"]) if item_html else ""
 
                 # Mark as seen first so failures don't loop forever
@@ -170,7 +186,7 @@ def run_scrape() -> dict:
                     source_url=item["url"],
                     source_reference=processed["source_reference"],
                     source_quote=processed["source_quote"],
-                    tag=processed["topic"].upper(),
+                    tag=source["kind"].upper(),
                     is_read=False,
                 )
                 db.add(notification)

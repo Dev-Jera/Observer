@@ -9,7 +9,7 @@ router = APIRouter(prefix="/api/notifications", tags=["notifications"])
 
 
 @router.get("", response_model=list[schemas.NotificationOut])
-def list_notifications(language: str = Query("eng"), db: Session = Depends(get_db)):
+def list_notifications(language: str = Query("eng"), topics: str = Query(""), db: Session = Depends(get_db)):
     notifications = (
         db.query(models.Notification)
         .order_by(models.Notification.created_at.desc())
@@ -18,6 +18,9 @@ def list_notifications(language: str = Query("eng"), db: Session = Depends(get_d
     )
     if language not in {"eng", "lug", "ach", "nyn", "lug_UG", "teo"}:
         language = "eng"
+    selected_topics = {topic.strip().lower() for topic in topics.split(",") if topic.strip()}
+    if selected_topics:
+        notifications = [item for item in notifications if item.tag.lower() in selected_topics]
     return [
         {
             "id": item.id,
