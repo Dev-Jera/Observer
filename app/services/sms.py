@@ -12,7 +12,7 @@ from .. import models
 logger = logging.getLogger("citizeneye.sms")
 SMS_URL = "https://api.africastalking.com/version1/messaging"
 UGANDA_PHONE = re.compile(r"^\+256\d{9}$")
-VALID_CADENCES = (30, 60, 360)
+VALID_CADENCES = (1, 5, 30, 60, 360)
 
 
 def normalize_phone(phone_number: str) -> str:
